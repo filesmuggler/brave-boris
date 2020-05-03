@@ -2,13 +2,16 @@
 #include <ros.h>
 #include <ros/time.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/MagneticField.h>
 #include <sensor_msgs/Temperature.h>
 
 //ROS
 ros::NodeHandle nh;
 sensor_msgs::Imu IMUMsg;
+sensor_msgs::MagneticField MagMsg;
 sensor_msgs::Temperature TempMsg;
-ros::Publisher IMUPub("imu", &IMUMsg);
+ros::Publisher IMUPub("/imu/data_raw", &IMUMsg);
+ros::Publisher MagPub("/imu/mag", &MagMsg);
 ros::Publisher TempPub("temperature", &TempMsg);
 
 //IMU
@@ -26,6 +29,7 @@ void setup()
   //ROS
   nh.initNode();
   nh.advertise(IMUPub);
+  nh.advertise(MagPub);
   nh.advertise(TempPub);
 
   //IMU
@@ -50,9 +54,12 @@ void loop()
   //ROS
   IMUMsg.header.stamp = nh.now();
   IMUMsg.header.frame_id = "base_link";
+  MagMsg.header.stamp = nh.now();
+  MagMsg.header.frame_id = "base_link";
 
   //covariances
-  
+
+  //IMU message
   //orientation
   IMUMsg.orientation_covariance[0] = 0.0025;
   IMUMsg.orientation_covariance[4] = 0.0025;
@@ -66,8 +73,14 @@ void loop()
   IMUMsg.linear_acceleration_covariance[4] = 0.0025;
   IMUMsg.linear_acceleration_covariance[8] = 0.0025;
 
+  //magnetic field message
+  MagMsg.magnetic_field_covariance[0] = 0.0025;
+  MagMsg.magnetic_field_covariance[4] = 0.0025;
+  MagMsg.magnetic_field_covariance[8] = 0.0025;
+  
   //values
 
+  //IMU message
   //accelerometer
   IMUMsg.linear_acceleration.x = IMU.getAccelX_mss();
   IMUMsg.linear_acceleration.y = IMU.getAccelY_mss();
@@ -83,6 +96,15 @@ void loop()
 
   IMUPub.publish(&IMUMsg);
 
+  //magnetic field message
+  MagMsg.magnetic_field.x = IMU.getMagX_uT();
+  MagMsg.magnetic_field.y = IMU.getMagY_uT();
+  MagMsg.magnetic_field.z = IMU.getMagZ_uT();
+  
+  MagPub.publish(&MagMsg);
+
+  //temperature
+  
   TempMsg.variance = 0;
   TempMsg.header.stamp = nh.now();
   TempMsg.header.frame_id = "base_link";
