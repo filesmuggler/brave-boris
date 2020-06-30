@@ -1,54 +1,39 @@
-// PWM frequency: 490 Hz (pins 5 and 6: 980 Hz)
-
-// 0% - max backward
-// 50% - neutral
-// 100% - max forward
-
 #include <ros.h>
 #include <std_msgs/Int16.h>
-
-#define LEFT_PIN 10
-#define RIGHT_PIN 11
+#include <Servo.h>
 
 ros::NodeHandle nh;
+std_msgs::Int16 forward, angle;
 
-std_msgs::Int16 left, right;
+Servo servo1, servo2;
 
-void throttleCb(const std_msgs::Int16& throttle)
-{
-  left.data = throttle.data;
-  right.data = throttle.data;
+void throttleCb(const std_msgs::Int16& throttle){
+  forward.data = throttle.data;
 }
 
-void rotationCb(const std_msgs::Int16& rotation)
-{
-  left.data = - rotation.data;
-  right.data = + rotation.data;
+void rotationCb(const std_msgs::Int16& rotation){
+  angle.data = rotation.data;
 }
 
 ros::Subscriber<std_msgs::Int16> throttleSub("throttle", &throttleCb);
 ros::Subscriber<std_msgs::Int16> rotationSub("rotation", &rotationCb);
 
-void setup() 
-{
+void setup() {
   nh.initNode();
   nh.subscribe(throttleSub);
   nh.subscribe(rotationSub);
 
-  pinMode(LEFT_PIN, OUTPUT);
-  pinMode(RIGHT_PIN, OUTPUT);
+  servo1.attach(6);
+  servo2.attach(9);
 
-  //neutral values (2.5V, 50%)
-  left.data = 128;
-  right.data = 128;
+  forward.data = 128;
+  angle.data = 128;
 }
 
-void loop() 
-{
-  analogWrite(LEFT_PIN, left.data);
-  analogWrite(RIGHT_PIN, right.data);
+void loop() {
+  servo1.write(forward.data);
+  servo2.write(angle.data);
 
   delay(30);
-  
   nh.spinOnce();
 }
